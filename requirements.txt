@@ -1,2 +1,2 @@
 tarantool>=0.5
-robotframework
+robotframework>=3.0.2

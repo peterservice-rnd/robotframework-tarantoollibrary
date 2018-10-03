@@ -15,10 +15,6 @@ Installation
 
     pip install robotframework-tarantoollibrary
 
-Documentation
--------------
-
-Keyword documentation for robotframework-tarantoollibrary library: GitHub_.
 
 Example
 -------
@@ -44,5 +40,3 @@ Apache License 2.0
 
 .. |Build Status| image:: https://travis-ci.org/peterservice-rnd/robotframework-tarantoollibrary.svg?branch=master
    :target: https://travis-ci.org/peterservice-rnd/robotframework-tarantoollibrary
-   
-.. _docs: https://github.com/peterservice-rnd/robotframework-tarantoollibrary/master/docs/tarantoollibrary.html  
