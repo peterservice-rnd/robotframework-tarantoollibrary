@@ -1,0 +1,2 @@
+tarantool>=0.5
+robotframework
