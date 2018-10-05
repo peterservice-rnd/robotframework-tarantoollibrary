@@ -20,7 +20,7 @@ setup(
     version='1.0.1',
     description='A Robot Framework Tarantool Library',
     long_description=long_description,
-    url='https://github.com/capibara/robotframework-tarantoollibrary',
+    url='https://github.com/robotframework-rnd/robotframework-tarantoollibrary',
     author='Pavel Fedorov',
     author_email='Pavel.Fedorov@nexign-systems.com',
     license='License :: OSI Approved :: Apache Software License',
