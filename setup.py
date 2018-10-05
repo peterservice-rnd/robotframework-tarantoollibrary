@@ -21,8 +21,8 @@ setup(
     description='A Robot Framework Tarantool Library',
     long_description=long_description,
     url='https://github.com/robotframework-rnd/robotframework-tarantoollibrary',
-    author='Pavel Fedorov',
-    author_email='Pavel.Fedorov@nexign-systems.com',
+    author='JSC PETER-SERVICE',
+    author_email='MF_AIST_all@billing.ru',
     license='License :: OSI Approved :: Apache Software License',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
