@@ -20,7 +20,7 @@ setup(
     version='1.0.1',
     description='A Robot Framework Tarantool Library',
     long_description=long_description,
-    url='https://github.com/robotframework-rnd/robotframework-tarantoollibrary',
+    url='https://github.com/peterservice-rnd/robotframework-tarantoollibrary',
     author='JSC PETER-SERVICE',
     author_email='MF_AIST_all@billing.ru',
     license='License :: OSI Approved :: Apache Software License',
