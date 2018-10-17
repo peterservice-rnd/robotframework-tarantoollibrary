@@ -17,7 +17,7 @@ with open(path.join(here, 'requirements.txt')) as f:
 
 setup(
     name='robotframework-tarantoollibrary',
-    version='1.0.1',
+    version='1.0.3',
     description='A Robot Framework Tarantool Library',
     long_description=long_description,
     url='https://github.com/peterservice-rnd/robotframework-tarantoollibrary',
@@ -38,5 +38,6 @@ setup(
         'Framework :: Robot Framework :: Library',
     ],
     package_dir={'': 'src'},
+    py_modules=['TarantoolLibrary'],
     install_requires=requirements,
 )
