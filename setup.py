@@ -38,5 +38,6 @@ setup(
         'Framework :: Robot Framework :: Library',
     ],
     package_dir={'': 'src'},
+    py_modules=['TarantoolLibrary'],
     install_requires=requirements,
 )
