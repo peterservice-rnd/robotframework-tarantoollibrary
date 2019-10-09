@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from typing import Any, List, Optional, Tuple, Union
+
 from robot.api import logger
 from robot.utils import ConnectionCache
-from tarantool import Connection
+from tarantool import Connection, response
 import codecs
-import sys
 
 
 class TarantoolLibrary(object):
@@ -18,20 +19,30 @@ class TarantoolLibrary(object):
 
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Library initialization.
         Robot Framework ConnectionCache() class is prepared for working with concurrent connections."""
-        self._connection = None
+        self._connection: Optional[Connection] = None
         self._cache = ConnectionCache()
 
-    def _modify_key_type(self, key, key_type):
+    @property
+    def connection(self) -> Connection:
+        """ Property method for getting existence DB connection object.
+
+        *Returns:*\n
+            DB connection
+        """
+        if not self._connection:
+            raise AttributeError('No database connection found.')
+        return self._connection
+
+    def _modify_key_type(self, key: Any, key_type: str) -> Union[int, str]:
         """
         Convert key to the required tarantool data type.
 
         Tarantool data types corresponds to the following Python types:
-        STR - unicode (str for Python 3.x)
-        NUM - int
-        NUM64 - int or long (int for Python 3.x)
+        STR - str
+        NUM, NUM64 - int
 
         *Args:*\n
             _key_: key to modify;\n
@@ -46,17 +57,13 @@ class TarantoolLibrary(object):
                 return codecs.decode(key)
             return str(key)
 
-        if key_type == "NUM":
+        if key_type in ["NUM", "NUM64"]:
             return int(key)
 
-        if key_type == "NUM64":
-            if int(sys.version[0]) == 2:
-                return long(key)  # noqa: F821
-            else:
-                return int(key)
-        raise Exception("Wrong key type for conversation: {}. Allowed ones are STR, NUM and NUM64".format(key_type))
+        raise Exception(f"Wrong key type for conversation: {key_type}. Allowed ones are STR, NUM and NUM64")
 
-    def connect_to_tarantool(self, host, port, user=None, password=None, alias=None):
+    def connect_to_tarantool(self, host: str, port: Union[int, str], user: str = None, password: str = None,
+                             alias: str = None) -> int:
         """
         Connection to Tarantool DB.
 
@@ -73,17 +80,14 @@ class TarantoolLibrary(object):
         *Example:*\n
             | Connect To Tarantool  |  127.0.0.1  |  3301  |
         """
-        logger.debug('Connecting  to the Tarantool DB using \
-        host={host}, port={port}, user={user}'.format(host=host,
-                                                      port=port,
-                                                      user=user))
+        logger.debug(f'Connecting  to the Tarantool DB using host={host}, port={port}, user={user}')
         try:
             self._connection = Connection(host=host, port=int(port), user=user, password=password)
-            return self._cache.register(self._connection, alias)
+            return self._cache.register(self.connection, alias)
         except Exception as exc:
             raise Exception("Logon to Tarantool error:", str(exc))
 
-    def close_all_tarantool_connections(self):
+    def close_all_tarantool_connections(self) -> None:
         """
         Close all Tarantool connections that were opened.
         After calling this keyword connection index returned by opening new connections [#Connect To Tarantool |Connect To Tarantool],
@@ -101,7 +105,7 @@ class TarantoolLibrary(object):
         self._cache.close_all()
         self._connection = None
 
-    def switch_tarantool_connection(self, index_or_alias):
+    def switch_tarantool_connection(self, index_or_alias: Union[int, str]) -> int:
         """
         Switch to another existing Tarantool connection using its index or alias.\n
 
@@ -134,12 +138,13 @@ class TarantoolLibrary(object):
             | @{data3}=  |  Select  |  space1  |  key1  |
             | Close All Tarantool Connections |
         """
-        logger.debug('Switching to tarantool connection with alias/index {}'.format(index_or_alias))
+        logger.debug(f'Switching to tarantool connection with alias/index {index_or_alias}')
         old_index = self._cache.current_index
         self._connection = self._cache.switch(index_or_alias)
         return old_index
 
-    def select(self, space_name, key, offset=0, limit=0xffffffff, index=0, key_type=None, **kwargs):
+    def select(self, space_name: Union[int, str], key: Any, offset: int = 0, limit: int = 0xffffffff,
+               index: Union[int, str] = 0, key_type: str = None, **kwargs: Any) -> response.Response:
         """
         Select and retrieve data from the database.
 
@@ -160,13 +165,10 @@ class TarantoolLibrary(object):
             | Set Test Variable | ${key} | ${data_from_trnt[0][0]} |
             | Set Test Variable | ${data_from_field} | ${data_from_trnt[0][1]} |
         """
-        logger.debug('Select data from space {space} by key {key}'.format(
-            space=space_name,
-            key=key)
-        )
+        logger.debug(f'Select data from space {space_name} by key {key}')
         if key_type:
             key = self._modify_key_type(key=key, key_type=key_type)
-        return self._connection.select(
+        return self.connection.select(
             space_name=space_name,
             key=key,
             offset=offset,
@@ -175,7 +177,7 @@ class TarantoolLibrary(object):
             **kwargs
         )
 
-    def insert(self, space_name, values):
+    def insert(self, space_name: Union[int, str], values: Tuple[Union[int, str], ...]) -> response.Response:
         """
         Execute insert request.
 
@@ -192,10 +194,10 @@ class TarantoolLibrary(object):
             | Set Test Variable | ${key} | ${response[0][0]} |
 
         """
-        logger.debug('Insert values {values} in space {space}'.format(space=space_name, values=values))
-        return self._connection.insert(space_name=space_name, values=values)
+        logger.debug(f'Insert values {values} in space {space_name}')
+        return self.connection.insert(space_name=space_name, values=values)
 
-    def create_operation(self, operation, field, arg):
+    def create_operation(self, operation: str, field: int, arg: Any) -> Tuple:
         """
         Check and prepare operation tuple.
 
@@ -217,22 +219,23 @@ class TarantoolLibrary(object):
             _arg_: depending on operation argument or list of arguments;\n
 
         *Returns:*\n
-            Tarantool server response.
+            Sequence of the operation parameters.
 
         *Example:*\n
             | ${list_to_append}= | Create List | ${offset} | ${count} | ${value} |
             | ${operation}= | Create Operation | operation=: | field=${1} | arg=${list_to_append} |
         """
         if operation not in ('+', '-', '&', '|', '^', ':', '!', '=', '#'):
-            raise Exception('Unsupported operation: {}'.format(operation))
+            raise Exception(f'Unsupported operation: {operation}')
         if isinstance(arg, (list, tuple)):
-            op_field_list = [operation, field]
+            op_field_list: List[Union[int, str]] = [operation, field]
             op_field_list.extend(arg)
             return tuple(op_field_list)
         else:
             return operation, field, arg
 
-    def update(self, space_name, key, op_list, key_type=None, **kwargs):
+    def update(self, space_name: Union[int, str], key: Any, op_list: Union[Tuple, List[Tuple]],
+               key_type: str = None, **kwargs: Any) -> response.Response:
         """
         Execute update request.
 
@@ -259,19 +262,15 @@ class TarantoolLibrary(object):
             | ${operation}= | Create Operation | operation== | field=${1} | arg=NEW DATA |
             | Update | space_name=${SPACE_NAME} | key=${key} | op_list=${operation} |
         """
-        logger.debug('Update data in space {space} with key {key} with operations {op_list}'.format(
-            space=space_name,
-            key=key,
-            op_list=op_list
-        ))
+        logger.debug(f'Update data in space {space_name} with key {key} with operations {op_list}')
         if key_type:
             key = self._modify_key_type(key=key, key_type=key_type)
         if isinstance(op_list[0], (list, tuple)):
-            return self._connection.update(space_name=space_name, key=key, op_list=op_list, **kwargs)
+            return self.connection.update(space_name=space_name, key=key, op_list=op_list, **kwargs)
         else:
-            return self._connection.update(space_name=space_name, key=key, op_list=[op_list], **kwargs)
+            return self.connection.update(space_name=space_name, key=key, op_list=[op_list], **kwargs)
 
-    def delete(self, space_name, key, key_type=None, **kwargs):
+    def delete(self, space_name: Union[int, str], key: Any, key_type: str = None, **kwargs: Any) -> response.Response:
         """
         Execute delete request.
 
@@ -287,7 +286,7 @@ class TarantoolLibrary(object):
         *Example:*\n
             | Delete | space_name=${SPACE_NAME}| key=${key} |
         """
-        logger.debug('Delete data in space {space} by key {key}'.format(space=space_name, key=key))
+        logger.debug(f'Delete data in space {space_name} by key {key}')
         if key_type:
             key = self._modify_key_type(key=key, key_type=key_type)
-        return self._connection.delete(space_name=space_name, key=key, **kwargs)
+        return self.connection.delete(space_name=space_name, key=key, **kwargs)
